@@ -18,21 +18,21 @@ ver = True
 
 #Port of SQM-lu
 the_port = "com4"
-number_of_samples_for_mean = 1000
+number_of_samples_for_mean = 10
 
 #SQL variables
 #Host: Ip or domain
 host = "localhost"
 #User name
-user = "root"
+user = "rsqm"
 #Password
 passwd = ""
 #port Number. 3306 for MySQL
 port_num = 3306
 #Database name
-database = "dummy"
+database = "rsqm"
 #Single value table name
-single_table = "sqm_single"
+single_table = "2019"
 #Mean value table name
 mean_table = "sqm"
 

@@ -43,7 +43,7 @@ class sql():
             for i in range(len(fields)):
                 equal.append("{}={}".format(fields[i], values[i]))
                 
-            sql = "UPDATE {} SET {} {}".format(table, ", ".join(equal), where)
+            sql = "UPDATE `{}` SET {} {}".format(table, ", ".join(equal), where)
             self.logger.log(sql)
             
 
@@ -76,15 +76,13 @@ class sql():
                     values_str = "({}), {}".format(tmp, values_str)
                 values_str = values_str[:-2]
                     
-                sql = "insert ignore into  {0} ({1}) values {2};".format(
+                sql = "insert ignore into  `{0}` ({1}) values {2};".format(
                         table, fields_str, values_str)
                 
                 try:
                     cur.execute(sql)
-                    return True
                 except Exception as e:
                     self.logger.log(e)
-                    return False
                     
                 cur.close()
                 self.sql.commit()
@@ -98,7 +96,7 @@ class sql():
     def select(self, table, fields="*", where="WHERE 1", groupb=""):
         try:
             cur = self.sql.cursor()
-            sql = "SELECT {0} from {1} {2} {3}".format(fields, table, where, groupb)
+            sql = "SELECT `{0}` from {1} {2} {3}".format(fields, table, where, groupb)
             self.logger.log(sql)
             cur.execute(sql)
             cur.fetchall()

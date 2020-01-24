@@ -13,27 +13,25 @@ from numpy import array as ar
 from numpy import mean 
 from numpy import std
 
-from . import env
-from . import ast
+from. import ast
 
-class handle:
-    def __init__(self, port, verb=True, debugger=False):
-        self.verb = verb
-        self.debugger = debugger
-        self.logger = env.Logger(verb=self.verb, debugger=self.debugger)
+class Handle:
+    def __init__(self, logger, port):
+        self.logger = logger
         self.port = port
-        self.atm = ast.TimePython()
-        self.asm = ast.sqm(verb=self.verb, debugger=self.debugger)
+        self.atm = ast.Time(self.logger)
+        self.asm = ast.SQM(self.logger)
         
     def read(self):
         self.logger.log("Starting to read")
         try:
             self.con = self.connect()
-            data = self.read_data()
+            data = self._read_data_()
             self.close()
             return(data)
         except Exception as e:
             self.logger.log(e)
+            self.close()
         
     def read_cont(self, number, interval):
         self.logger.log("Starting to read ({}) samples with ({}) interval".format(
@@ -42,7 +40,7 @@ class handle:
             data = []
             self.con = self.connect()
             for i in range(number):
-                d = self.read_data()
+                d = self._read_data_()
                 if d is not None:
                     data.append(d)
                 sleep(interval)
@@ -52,6 +50,7 @@ class handle:
             return(data)
         except Exception as e:
             self.logger.log(e)
+            self.close()
         
     def mean_read(self, number):
         self.logger.log("Calculating mean and standard deviation of ({}) samples".format(number))
@@ -60,7 +59,7 @@ class handle:
             c = 0
             self.con = self.connect()
             for i in range(number):
-                d = self.read_data()
+                d = self._read_data_()
                 if d is not None:
                     data.append(d)
                     c += 1
@@ -72,11 +71,13 @@ class handle:
             stdv_mag = std(data[:, 1])
             stdv_sqm_mag = std(data[:, 2])
             stdv_tmp = std(data[:, 3])
-            return(ar([mean_data[0], mean_data[1], stdv_mag,
-                       mean_data[2], stdv_sqm_mag,
-                       mean_data[3], stdv_tmp, number, c]))
+            return({"JD": mean_data[0], "Mag": mean_data[1], "STDV": stdv_mag,
+                       "CMag": mean_data[2], "CSTDV": stdv_sqm_mag,
+                       "Temperature": mean_data[3], "TemperatureSTDV": stdv_tmp,
+                       "N": number, "Valid": c})
         except Exception as e:
             self.logger.log(e)
+            self.close()
         
     def connect(self):
         self.logger.log("Creating a connetion to port ({})".format(self.port))
@@ -89,14 +90,14 @@ class handle:
         except Exception as e:
             self.logger.log(e)
             
-    def read_data(self):
+    def _read_data_(self):
         self.logger.log("Reading a line from device at ({})".format(self.port))
         if self.con is not None:
             try:
                 self.con.write(str.encode("rx\n"))
                 self.con.flush()
                 tmp = str(self.con.readline()).split()
-                utc = self.logger.time_stamp()
+                utc = self.atm.now()
                 mag = float(tmp[1].split(",")[0].replace("m", ""))
                 sqm_mag = self.asm.mag_calc(mag)
                 tempe = float(tmp[2].split("C")[0])
